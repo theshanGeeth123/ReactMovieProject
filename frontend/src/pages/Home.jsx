@@ -12,21 +12,42 @@ function Home() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadPopularMovies = async () => {
-      try {
-        const popularMovies = await getPopularMovies();
-        setMovies(popularMovies);
-      } catch (error) {
-        console.log(error);
-        setError("Failed to load movies...");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [page, setPage] = useState(1);
 
+useEffect(() => {
+  const loadPopularMovies = async () => {
+    try {
+      setLoading(true);
+      const popularMovies = await getPopularMovies(page);
+      setMovies((prevMovies) => {
+        const existingIds = new Set(prevMovies.map((m) => m.id));
+        const newUniqueMovies = popularMovies.filter(
+          (m) => !existingIds.has(m.id)
+        );
+        return [...prevMovies, ...newUniqueMovies];
+      });
+
+
+      // Optional: Scroll to bottom
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 100);
+    } catch (error) {
+      console.log(error);
+      setError("Failed to load movies...");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!searchQuery) {
     loadPopularMovies();
-  }, []);
+  }
+}, [page]);
+
 
   //   const movies = [
   //     { id: 1, title: "John wick", release_date: "2020" },
@@ -35,28 +56,24 @@ function Home() {
   //   ];
 
   const handleSerch = async (e) => {
-
     e.preventDefault();
-    
-    if(!searchQuery.trim()) return
 
-    if(loading) return
+    if (!searchQuery.trim()) return;
+
+    if (loading) return;
 
     setLoading(true);
 
     try {
-        const searchResults = await searchMovies(searchQuery);
-        setMovies(searchResults);
-        setError(null);
-        
+      const searchResults = await searchMovies(searchQuery);
+      setMovies(searchResults);
+      setError(null);
     } catch (error) {
-        console.log(error);
-        setError("Failed to serch movies...")
-    }finally{
-        setLoading(false);
+      console.log(error);
+      setError("Failed to serch movies...");
+    } finally {
+      setLoading(false);
     }
-
-   
   };
 
   return (
@@ -87,6 +104,15 @@ function Home() {
               )
           )}
         </div>
+      )}
+
+      {!searchQuery && !loading && (
+        <button
+          className="load-more"
+          onClick={() => setPage((prev) => prev + 1)}
+        >
+          Load More
+        </button>
       )}
     </div>
   );

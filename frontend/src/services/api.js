@@ -1,8 +1,14 @@
 const API_KEY = "719a37f3b2a643cd93cfe34728a1523a";
 const BASE_URL = "https://api.themoviedb.org/3";
 
-export const getPopularMovies = async () => {
-  const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}`);
+// export const getPopularMovies = async () => {
+//   const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}`);
+//   const data = await response.json();
+//   return data.results;
+// };
+
+export const getPopularMovies = async (page = 1) => {
+  const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`);
   const data = await response.json();
   return data.results;
 };

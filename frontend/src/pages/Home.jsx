@@ -5,61 +5,53 @@ import "../css/Home.css";
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-
   const [movies, setMovies] = useState([]);
-
   const [error, setError] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(1);
+  const [loadMoreClicked, setLoadMoreClicked] = useState(false);
 
-useEffect(() => {
-  const loadPopularMovies = async () => {
-    try {
-      setLoading(true);
-      const popularMovies = await getPopularMovies(page);
-      setMovies((prevMovies) => {
-        const existingIds = new Set(prevMovies.map((m) => m.id));
-        const newUniqueMovies = popularMovies.filter(
-          (m) => !existingIds.has(m.id)
-        );
-        return [...prevMovies, ...newUniqueMovies];
-      });
-
-
-      // Optional: Scroll to bottom
-      setTimeout(() => {
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: "smooth",
+  useEffect(() => {
+    const loadPopularMovies = async () => {
+      try {
+        setLoading(true);
+        const popularMovies = await getPopularMovies(page);
+        setMovies((prevMovies) => {
+          const existingIds = new Set(prevMovies.map((m) => m.id));
+          const newUniqueMovies = popularMovies.filter(
+            (m) => !existingIds.has(m.id)
+          );
+          return [...prevMovies, ...newUniqueMovies];
         });
-      }, 100);
-    } catch (error) {
-      console.log(error);
-      setError("Failed to load movies...");
-    } finally {
-      setLoading(false);
+
+        // ✅ Only scroll to bottom if Load More was clicked
+        if (loadMoreClicked) {
+          setTimeout(() => {
+            window.scrollTo({
+              top: document.documentElement.scrollHeight,
+              behavior: "smooth",
+            });
+            setLoadMoreClicked(false); // Reset
+          }, 100);
+        }
+
+      } catch (error) {
+        console.log(error);
+        setError("Failed to load movies...");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!searchQuery) {
+      loadPopularMovies();
     }
-  };
-
-  if (!searchQuery) {
-    loadPopularMovies();
-  }
-}, [page]);
-
-
-  //   const movies = [
-  //     { id: 1, title: "John wick", release_date: "2020" },
-  //     { id: 2, title: "Terminator", release_date: "2000" },
-  //     { id: 3, title: "The matrix", release_date: "1999" },
-  //   ];
+  }, [page]);
 
   const handleSerch = async (e) => {
     e.preventDefault();
 
     if (!searchQuery.trim()) return;
-
     if (loading) return;
 
     setLoading(true);
@@ -70,7 +62,7 @@ useEffect(() => {
       setError(null);
     } catch (error) {
       console.log(error);
-      setError("Failed to serch movies...");
+      setError("Failed to search movies...");
     } finally {
       setLoading(false);
     }
@@ -93,13 +85,13 @@ useEffect(() => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {loading ? (
+      {loading && page === 1 ? (
         <div className="loading">Loading...</div>
       ) : (
         <div className="movies-grid">
           {movies.map(
             (movie) =>
-              movie.title.toLowerCase().startsWith(searchQuery) && (
+              movie.title.toLowerCase().startsWith(searchQuery.toLowerCase()) && (
                 <MovieCard movie={movie} key={movie.id} />
               )
           )}
@@ -109,7 +101,10 @@ useEffect(() => {
       {!searchQuery && !loading && (
         <button
           className="load-more"
-          onClick={() => setPage((prev) => prev + 1)}
+          onClick={() => {
+            setLoadMoreClicked(true);
+            setPage((prev) => prev + 1);
+          }}
         >
           Load More
         </button>
